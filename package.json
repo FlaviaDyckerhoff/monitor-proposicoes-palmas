@@ -1,0 +1,12 @@
+{
+  "name": "monitor-proposicoes-palmas",
+  "version": "1.0.0",
+  "description": "Monitor automático de matérias legislativas — Câmara Municipal de Palmas (TO)",
+  "main": "monitor.js",
+  "scripts": {
+    "start": "node monitor.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.9"
+  }
+}
