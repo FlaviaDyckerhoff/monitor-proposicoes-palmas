@@ -36,7 +36,7 @@ async function enviarEmail(novas) {
     const rows = porTipo[tipo].map(p =>
       `<tr>
         <td style="padding:8px;border-bottom:1px solid #eee;color:#555;font-size:12px">${p.tipo || '-'}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee"><strong>${p.numero || '-'}/${p.ano || '-'}</strong></td>
+        <td style="padding:8px;border-bottom:1px solid #eee"><strong>${p.numeroOriginal || '-'}/${p.ano || '-'}</strong></td>
         <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px">${p.autor || '-'}</td>
         <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;white-space:nowrap">${p.data || '-'}</td>
         <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px">${p.ementa || '-'}</td>
@@ -79,37 +79,46 @@ async function enviarEmail(novas) {
   console.log(`✅ Email enviado com ${novas.length} matérias novas.`);
 }
 
-async function buscarMateriasRecentes() {
+async function buscarPagina(ano, pagina) {
+  const url = `${API_BASE}/materias?ano=${ano}&page=${pagina}`;
+  const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
+  return response.json();
+}
+
+async function buscarTodasMaterias() {
   const ano = new Date().getFullYear();
   console.log(`🔍 Buscando matérias de ${ano}...`);
 
-  // Tenta com filtro de ano primeiro
-  const urlComAno = `${API_BASE}/materias?ano=${ano}&page=1`;
-  let response = await fetch(urlComAno, {
-    headers: { 'Accept': 'application/json' }
-  });
+  // Primeira página para saber quantas existem
+  const primeira = await buscarPagina(ano, 1);
+  const ultimaPagina = primeira.last_page || 1;
+  const total = primeira.total || 0;
+  console.log(`📊 Total: ${total} matérias, ${ultimaPagina} páginas`);
 
-  if (!response.ok) {
-    console.error(`❌ Erro na API: ${response.status} ${response.statusText}`);
-    return [];
+  let todas = [...(primeira.data || [])];
+
+  // Busca o restante das páginas
+  for (let pagina = 2; pagina <= ultimaPagina; pagina++) {
+    console.log(`📄 Buscando página ${pagina}/${ultimaPagina}...`);
+    const json = await buscarPagina(ano, pagina);
+    const items = json.data || [];
+    todas = todas.concat(items);
+
+    // Para cedo se encontrou matérias já vistas (otimização)
+    // Só aplica fora do primeiro run
+    const idsVistos = global._idsVistos;
+    if (idsVistos && idsVistos.size > 0) {
+      const algumVisto = items.some(p => idsVistos.has(String(p.id)));
+      if (algumVisto) {
+        console.log(`⏹️ Encontrou matérias já vistas na página ${pagina}. Parando busca.`);
+        break;
+      }
+    }
   }
 
-  let json = await response.json();
-  console.log('📦 Resposta da API (estrutura):', JSON.stringify(json).substring(0, 200));
-
-  const lista = json.data || [];
-  const total = json.total || lista.length;
-  const ultimaPagina = json.last_page || 1;
-
-  console.log(`📊 ${lista.length} matérias na página 1 (total: ${total}, páginas: ${ultimaPagina})`);
-
-  // Se o filtro por ano funcionou, last_page deve ser bem menor que 2428
-  // Se last_page ainda for muito alto (>100), o filtro não funcionou — usamos só page=1
-  if (ultimaPagina > 100) {
-    console.log('⚠️ Filtro por ano não aplicado pela API. Usando apenas página 1 (mais recentes).');
-  }
-
-  return lista;
+  console.log(`📦 Total recebido: ${todas.length} matérias`);
+  return todas;
 }
 
 function extrairAutor(p) {
@@ -123,10 +132,11 @@ function extrairAutor(p) {
 }
 
 function normalizarMateria(p) {
+  const numeroStr = String(p.numero || '-').replace(/\./g, '');
   return {
     id: String(p.id),
     tipo: p.tipo?.descricao || 'OUTROS',
-    numero: (p.numero || '-').replace('.', ''), // remove ponto: "1.133" → "1133" para ordenação numérica
+    numero: numeroStr,
     numeroOriginal: p.numero || '-',
     ano: String(p.ano || '-'),
     autor: extrairAutor(p),
@@ -141,8 +151,11 @@ function normalizarMateria(p) {
 
   const estado = carregarEstado();
   const idsVistos = new Set(estado.proposicoes_vistas.map(String));
+  global._idsVistos = idsVistos;
 
-  const materiasRaw = await buscarMateriasRecentes();
+  console.log(`📁 IDs já vistos: ${idsVistos.size} | Primeiro run: ${idsVistos.size === 0}`);
+
+  const materiasRaw = await buscarTodasMaterias();
 
   if (materiasRaw.length === 0) {
     console.log('⚠️ Nenhuma matéria encontrada.');
@@ -161,9 +174,6 @@ function normalizarMateria(p) {
       if (a.tipo > b.tipo) return 1;
       return (parseInt(b.numero) || 0) - (parseInt(a.numero) || 0);
     });
-
-    // Restaura numero original para exibição no email
-    novas.forEach(p => { p.numero = p.numeroOriginal; });
 
     await enviarEmail(novas);
     novas.forEach(p => idsVistos.add(p.id));
