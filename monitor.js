@@ -6,6 +6,15 @@ const EMAIL_REMETENTE = process.env.EMAIL_REMETENTE;
 const EMAIL_SENHA = process.env.EMAIL_SENHA;
 const ARQUIVO_ESTADO = 'estado.json';
 const API_BASE = 'https://palmas.nexlegis.com.br/api';
+const SITE_BASE = 'https://palmas.nexlegis.com.br';
+
+function escapeHtml(str) {
+  return (str || '').toString()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 function carregarEstado() {
   if (fs.existsSync(ARQUIVO_ESTADO)) {
@@ -32,14 +41,15 @@ async function enviarEmail(novas) {
   });
 
   const linhas = Object.keys(porTipo).sort().map(tipo => {
-    const header = `<tr><td colspan="5" style="padding:10px 8px 4px;background:#f0f4f8;font-weight:bold;color:#7b2d00;font-size:13px;border-top:2px solid #7b2d00">${tipo} — ${porTipo[tipo].length} matéria(s)</td></tr>`;
+    const header = `<tr><td colspan="6" style="padding:10px 8px 4px;background:#f0f4f8;font-weight:bold;color:#7b2d00;font-size:13px;border-top:2px solid #7b2d00">${escapeHtml(tipo)} — ${porTipo[tipo].length} matéria(s)</td></tr>`;
     const rows = porTipo[tipo].map(p =>
       `<tr>
-        <td style="padding:8px;border-bottom:1px solid #eee;color:#555;font-size:12px">${p.tipo || '-'}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee"><strong>${p.numeroOriginal || '-'}/${p.ano || '-'}</strong></td>
-        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px">${p.autor || '-'}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;white-space:nowrap">${p.data || '-'}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px">${p.ementa || '-'}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;color:#555;font-size:12px">${escapeHtml(p.tipo || '-')}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee"><strong>${escapeHtml(p.numeroOriginal || '-')}/${escapeHtml(p.ano || '-')}</strong></td>
+        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px">${escapeHtml(p.autor || '-')}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;white-space:nowrap">${escapeHtml(p.data || '-')}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px">${escapeHtml(p.ementa || '-')}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;white-space:nowrap"><a href="${p.url || SITE_BASE + '/materias'}" style="color:#7b2d00;font-weight:bold">abrir</a></td>
       </tr>`
     ).join('');
     return header + rows;
@@ -59,6 +69,7 @@ async function enviarEmail(novas) {
             <th style="padding:10px;text-align:left">Autor</th>
             <th style="padding:10px;text-align:left">Data</th>
             <th style="padding:10px;text-align:left">Ementa</th>
+            <th style="padding:10px;text-align:left">Link</th>
           </tr>
         </thead>
         <tbody>${linhas}</tbody>
@@ -133,6 +144,7 @@ function extrairAutor(p) {
 
 function normalizarMateria(p) {
   const numeroStr = String(p.numero || '-').replace(/\./g, '');
+  const url = p.slug ? `${SITE_BASE}/materias/${p.slug}` : `${SITE_BASE}/materias/${p.id}`;
   return {
     id: String(p.id),
     tipo: p.tipo?.descricao || 'OUTROS',
@@ -141,7 +153,8 @@ function normalizarMateria(p) {
     ano: String(p.ano || '-'),
     autor: extrairAutor(p),
     data: p.data_publicacao || '-',
-    ementa: (p.ementa || '-').substring(0, 200),
+    ementa: (p.ementa || '-').substring(0, 500),
+    url,
   };
 }
 
