@@ -1,5 +1,4 @@
 const fs = require('fs');
-const nodemailer = require('nodemailer');
 
 const EMAIL_DESTINO = process.env.EMAIL_DESTINO;
 const EMAIL_REMETENTE = process.env.EMAIL_REMETENTE;
@@ -20,14 +19,77 @@ function carregarEstado() {
   if (fs.existsSync(ARQUIVO_ESTADO)) {
     return JSON.parse(fs.readFileSync(ARQUIVO_ESTADO, 'utf8'));
   }
-  return { proposicoes_vistas: [], ultima_execucao: '' };
+  return { proposicoes_vistas: [], ultimos_por_tipo_ano: {}, ultima_execucao: '' };
 }
 
 function salvarEstado(estado) {
   fs.writeFileSync(ARQUIVO_ESTADO, JSON.stringify(estado, null, 2));
 }
 
-async function enviarEmail(novas) {
+function escapeHtml(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function numeroInteiro(p) {
+  const n = Number(String(p.numero || '').replace(/\D/g, ''));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function chaveTipoAno(p) {
+  return `${p.tipo || 'OUTROS'}|${p.ano || '-'}`;
+}
+
+function calcularUltimosPorTipoAno(proposicoes) {
+  const ultimos = {};
+  for (const p of proposicoes) {
+    const numero = numeroInteiro(p);
+    if (!numero || !p.ano || p.ano === '-') continue;
+    const chave = chaveTipoAno(p);
+    ultimos[chave] = Math.max(ultimos[chave] || 0, numero);
+  }
+  return ultimos;
+}
+
+function detectarSaltos(proposicoes, estado) {
+  const anteriores = estado.ultimos_por_tipo_ano || {};
+  const atuais = calcularUltimosPorTipoAno(proposicoes);
+  const presentes = {};
+  for (const p of proposicoes) {
+    const numero = numeroInteiro(p);
+    if (!numero) continue;
+    const chave = chaveTipoAno(p);
+    if (!presentes[chave]) presentes[chave] = new Set();
+    presentes[chave].add(numero);
+  }
+  const alertas = [];
+  for (const [chave, atual] of Object.entries(atuais)) {
+    const anterior = Number(anteriores[chave] || 0);
+    if (!anterior || atual <= anterior + 1) continue;
+    const faltantes = [];
+    for (let n = anterior + 1; n < atual; n++) {
+      if (!presentes[chave]?.has(n)) faltantes.push(n);
+    }
+    if (faltantes.length) {
+      const [tipo, ano] = chave.split('|');
+      alertas.push({ tipo, ano, anterior, atual, faltantes });
+    }
+  }
+  return { alertas, atuais };
+}
+
+function renderAlertasSaltos(alertas) {
+  if (!alertas.length) return '';
+  const itens = alertas.map(a => `<li><strong>${escapeHtml(a.tipo)} ${escapeHtml(a.ano)}</strong>: último visto ${a.anterior}, maior atual ${a.atual}. Possível(is) ausente(s): ${escapeHtml(a.faltantes.join(', '))}</li>`).join('');
+  return `<div style="background:#fff4e5;border:1px solid #f59e0b;color:#7c2d12;padding:12px 14px;margin:12px 0;border-radius:4px"><strong>Alerta de sequência:</strong><ul style="margin:8px 0 0 18px;padding:0">${itens}</ul></div>`;
+}
+
+async function enviarEmail(novas, alertas = []) {
+  if (process.env.DRY_RUN_EMAIL === '1') {
+    console.log(`[DRY_RUN_EMAIL] ${novas.length} matérias novas.`);
+    alertas.forEach(a => console.log(`[ALERTA_SEQUENCIA] ${a.tipo}/${a.ano}: ${a.anterior} -> ${a.atual}; faltantes: ${a.faltantes.join(', ')}`));
+    return;
+  }
+  const nodemailer = require('nodemailer');
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: { user: EMAIL_REMETENTE, pass: EMAIL_SENHA },
@@ -61,6 +123,7 @@ async function enviarEmail(novas) {
         🏛️ Câmara de Palmas — ${novas.length} nova(s) matéria(s)
       </h2>
       <p style="color:#666">Monitoramento automático — ${new Date().toLocaleString('pt-BR')}</p>
+      ${renderAlertasSaltos(alertas)}
       <table style="width:100%;border-collapse:collapse;font-size:14px">
         <thead>
           <tr style="background:#7b2d00;color:white">
@@ -83,7 +146,7 @@ async function enviarEmail(novas) {
   await transporter.sendMail({
     from: `"Monitor Câmara Palmas" <${EMAIL_REMETENTE}>`,
     to: EMAIL_DESTINO,
-    subject: `🏛️ Câmara Palmas: ${novas.length} nova(s) matéria(s) — ${new Date().toLocaleDateString('pt-BR')}`,
+    subject: `🏛️ Câmara Palmas: ${novas.length} nova(s) matéria(s)${alertas.length ? ' | alerta sequência' : ''} — ${new Date().toLocaleDateString('pt-BR')}`,
     html,
   });
 
@@ -179,22 +242,29 @@ function normalizarMateria(p) {
   console.log(`📊 Total normalizado: ${materias.length}`);
 
   const novas = materias.filter(p => !idsVistos.has(p.id));
+  const { alertas, atuais } = detectarSaltos(materias, estado);
   console.log(`🆕 Matérias novas: ${novas.length}`);
+  if (process.env.DRY_RUN_EMAIL === '1') {
+    await enviarEmail(novas, alertas);
+    console.log('DRY_RUN_EMAIL=1 — estado preservado sem alterações.');
+    return;
+  }
 
-  if (novas.length > 0) {
+  if (novas.length > 0 || alertas.length > 0) {
     novas.sort((a, b) => {
       if (a.tipo < b.tipo) return -1;
       if (a.tipo > b.tipo) return 1;
       return (parseInt(b.numero) || 0) - (parseInt(a.numero) || 0);
     });
 
-    await enviarEmail(novas);
+    await enviarEmail(novas, alertas);
     novas.forEach(p => idsVistos.add(p.id));
     estado.proposicoes_vistas = Array.from(idsVistos);
   } else {
     console.log('✅ Sem novidades. Nada a enviar.');
   }
 
+  estado.ultimos_por_tipo_ano = { ...(estado.ultimos_por_tipo_ano || {}), ...atuais };
   estado.ultima_execucao = new Date().toISOString();
   salvarEstado(estado);
 })();
