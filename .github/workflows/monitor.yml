@@ -2,8 +2,7 @@ name: Monitor Matérias Palmas
 
 on:
   schedule:
-    - cron: '40 11 * * 1-5'   # 08:40 BRT
-    - cron: '40 19 * * 1-5'   # 16:40 BRT
+    - cron: '44 9 * * *'   # 06:44 BRT
   workflow_dispatch:
 
 jobs:
