@@ -236,7 +236,7 @@ function normalizarMateria(p) {
     ano: String(p.ano || '-'),
     autor: extrairAutor(p),
     data: p.data_publicacao || '-',
-    ementa: (p.ementa || '-').substring(0, 500),
+    ementa: String(p.ementa || '-').replace(/\s+/g, ' ').trim() || '-',
     url,
   };
 }
