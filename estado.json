@@ -1935,11 +1935,16 @@
     "37394",
     "37393",
     "37392",
-    "37391"
+    "37391",
+    "37426",
+    "37427",
+    "37428",
+    "37429",
+    "37452"
   ],
-  "ultima_execucao": "2026-06-08T13:52:07.038Z",
+  "ultima_execucao": "2026-06-09T12:24:12.048Z",
   "ultimos_por_tipo_ano": {
-    "Requerimento|2026": 1996,
+    "Requerimento|2026": 2000,
     "Projeto de Lei|2026": 245,
     "Prestação de Contas do Prefeito|2026": 251,
     "Projeto de Lei do Executivo|2026": 7,
