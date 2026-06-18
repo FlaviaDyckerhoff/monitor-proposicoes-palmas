@@ -2021,16 +2021,19 @@
     "37537",
     "37536",
     "37535",
-    "37534"
+    "37534",
+    "37576",
+    "37575",
+    "37577"
   ],
-  "ultima_execucao": "2026-06-17T12:40:46.083Z",
+  "ultima_execucao": "2026-06-18T08:28:19.707Z",
   "ultimos_por_tipo_ano": {
     "Requerimento|2026": 2104,
-    "Projeto de Lei|2026": 195,
+    "Projeto de Lei|2026": 211,
     "Prestação de Contas do Prefeito|2026": 251,
     "Projeto de Lei do Executivo|2026": 7,
     "Projeto de Lei Complementar|2026": 3,
-    "Medida Provisória|2026": 2,
+    "Medida Provisória|2026": 3,
     "Veto Parcial|2026": 126
   }
 }
