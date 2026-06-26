@@ -271,7 +271,7 @@ async function enviarEmail(novas, alertas = []) {
   await transporter.sendMail({
     from: `"Monitor Câmara Palmas" <${EMAIL_REMETENTE}>`,
     to: EMAIL_DESTINO,
-    subject: `🏛️ Câmara Palmas: ${novas.length} nova(s) matéria(s)${alertas.length ? ' | alerta sequência' : ''} — ${new Date().toLocaleDateString('pt-BR')}`,
+    subject: `🏛️ Palmas: ${novas.length} nova(s) matéria(s)${alertas.length ? ' | alerta sequência' : ''} — ${new Date().toLocaleDateString('pt-BR')}`,
     html,
   });
 
