@@ -332,7 +332,7 @@ function extrairAutor(p) {
 
 function normalizarMateria(p) {
   const numeroStr = String(p.numero || '-').replace(/\./g, '');
-  const url = p.slug ? `${SITE_BASE}/materias/${p.slug}` : `${SITE_BASE}/materias/${p.id}`;
+  const url = p.slug ? `${SITE_BASE}/materias/${p.id}/${p.slug}` : `${SITE_BASE}/materias/${p.id}`;
   return {
     id: String(p.id),
     tipo: p.tipo?.descricao || 'OUTROS',
