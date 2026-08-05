@@ -675,6 +675,7 @@ function normalizarMateria(p) {
       return (parseInt(b.numero) || 0) - (parseInt(a.numero) || 0);
     });
 
+    await sincronizarRadar03(novas);
     await enviarEmail(novas, alertas);
     novas.forEach(p => idsVistos.add(p.id));
     estado.proposicoes_vistas = Array.from(idsVistos);
