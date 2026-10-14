@@ -2421,17 +2421,30 @@
     "38264",
     "38266",
     "38265",
-    "38270"
+    "38270",
+    "38282",
+    "38281",
+    "38280",
+    "38279",
+    "38278",
+    "38277",
+    "38276",
+    "38275",
+    "38274",
+    "38273",
+    "38271",
+    "38272"
   ],
-  "ultima_execucao": "2026-10-12T08:29:38.701Z",
+  "ultima_execucao": "2026-10-14T08:29:31.902Z",
   "ultimos_por_tipo_ano": {
     "Requerimento|2026": 2711,
-    "Projeto de Lei|2026": 359,
+    "Projeto de Lei|2026": 370,
     "Prestação de Contas do Prefeito|2026": 251,
     "Projeto de Lei do Executivo|2026": 22,
     "Projeto de Lei Complementar|2026": 5,
     "Medida Provisória|2026": 6,
     "Veto Parcial|2026": 141,
-    "Veto Total|2026": 160
+    "Veto Total|2026": 160,
+    "Projeto de Resolução|2026": 4
   }
 }
