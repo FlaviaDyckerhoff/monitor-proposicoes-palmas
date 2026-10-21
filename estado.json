@@ -2496,18 +2496,24 @@
     "38335",
     "38334",
     "38333",
-    "38320"
+    "38320",
+    "38364",
+    "38368",
+    "38367",
+    "38366",
+    "38365"
   ],
-  "ultima_execucao": "2026-10-20T08:29:21.870Z",
+  "ultima_execucao": "2026-10-21T08:29:32.318Z",
   "ultimos_por_tipo_ano": {
     "Requerimento|2026": 2786,
-    "Projeto de Lei|2026": 370,
+    "Projeto de Lei|2026": 374,
     "Prestação de Contas do Prefeito|2026": 251,
     "Projeto de Lei do Executivo|2026": 22,
     "Projeto de Lei Complementar|2026": 5,
     "Medida Provisória|2026": 6,
     "Veto Parcial|2026": 141,
     "Veto Total|2026": 160,
-    "Projeto de Resolução|2026": 4
+    "Projeto de Resolução|2026": 4,
+    "Emenda Substitutiva|2026": 1
   }
 }
