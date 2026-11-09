@@ -2717,12 +2717,16 @@
     "38516",
     "38515",
     "38514",
-    "38513"
+    "38513",
+    "38689",
+    "38688",
+    "38687",
+    "38686"
   ],
-  "ultima_execucao": "2026-11-06T08:29:32.658Z",
+  "ultima_execucao": "2026-11-09T08:29:23.053Z",
   "ultimos_por_tipo_ano": {
     "Requerimento|2026": 3040,
-    "Projeto de Lei|2026": 402,
+    "Projeto de Lei|2026": 401,
     "Prestação de Contas do Prefeito|2026": 251,
     "Projeto de Lei do Executivo|2026": 30,
     "Projeto de Lei Complementar|2026": 7,
